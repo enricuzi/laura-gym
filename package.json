@@ -1,23 +1,44 @@
 {
-  "name": "laura-gym",
-  "version": "1.0.0",
-  "description": "Let's zumba!",
+  "name": "webrtc-video-room",
+  "version": "2.0.3",
+  "description": "WebRTC Video Room is a Single-Page App in React using React Router that provides peer-to-peer video and audio communication in a web browser with minimum dependencies required.",
   "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "npm start"
-  },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/enricuzi/laura-gym.git"
+    "url": "https://github.com/dondido/webrtc-video-room.git"
   },
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/enricuzi/laura-gym/issues"
+  "scripts": {
+    "dev": "webpack --mode development",
+    "build": "webpack --mode production",
+    "postinstall": "webpack --mode production"
   },
-  "homepage": "https://github.com/enricuzi/laura-gym#readme",
+  "author": "Dian Dimitrov",
+  "keywords": [
+    "WebRTC Video Chat",
+    "RTCPeerConnection",
+    "React"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "@babel/core": "^7.5.5",
+    "@babel/preset-env": "^7.5.5",
+    "@babel/preset-react": "^7.0.0",
+    "babel-loader": "^8.0.6",
+    "css-loader": "^3.2.0",
+    "style-loader": "^0.21.0",
+    "webpack": "^4.39.3",
+    "webpack-cli": "^3.3.7"
+  },
   "dependencies": {
-    "express": "^4.17.1"
+    "compression": "^1.7.2",
+    "express": "^4.16.3",
+    "react": "^16.4.0",
+    "react-dom": ">=16.7.0",
+    "react-redux": "^5.0.7",
+    "react-router-dom": "^4.3.1",
+    "redux": "^4.0.0",
+    "serve-favicon": "^2.5.0",
+    "socket.io": "^2.1.1",
+    "prop-types": "latest"
   }
 }
