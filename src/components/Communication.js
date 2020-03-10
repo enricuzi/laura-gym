@@ -53,8 +53,12 @@ const Communication = props =>
 			<Link className="primary-button" to="/">OK</Link>
 		</div>
 		<div className="waiting">
-			<p><span>Waiting for someone to join this room:&nbsp;</span><a href={window.location.href}>{window.location.href}</a><br/>
-				<span className="remote-left">The remote side hung up.</span></p>
+			<p>
+				<span>Waiting for someone to join this room:&nbsp;</span>
+				<a href={props.url || window.location.href}>{props.url || window.location.href}</a>
+				<br/>
+				<span className="remote-left">The remote side hung up.</span>
+			</p>
 		</div>
 	</div>;
 

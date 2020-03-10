@@ -1,10 +1,12 @@
 import React, {Component} from 'react';
 import {PropTypes} from 'prop-types';
+import Logger from "../Logger";
 
 class MediaBridge extends Component {
 
 	constructor(props) {
 		super(props);
+		this.logger = new Logger("MediaContainer");
 		this.state = {
 			bridge: '',
 			user: ''
@@ -18,6 +20,7 @@ class MediaBridge extends Component {
 		this.hangup = this.hangup.bind(this);
 		this.init = this.init.bind(this);
 		this.setDescription = this.setDescription.bind(this);
+		this.handleError = this.handleError.bind(this);
 	}
 
 	componentWillMount() {
@@ -27,89 +30,111 @@ class MediaBridge extends Component {
 	}
 
 	componentDidMount() {
-		this.props.getUserMedia
-			.then(stream => this.localVideo.srcObject = this.localStream = stream);
+		this.props.getUserMedia.then(stream => this.localVideo.srcObject = this.localStream = stream);
 		this.props.socket.on('message', this.onMessage);
 		this.props.socket.on('hangup', this.onRemoteHangup);
 	}
 
 	componentWillUnmount() {
+		this.logger.log("Unmounting and romoving stream");
 		this.props.media(null);
 		if (this.localStream !== undefined) {
 			this.localStream.getVideoTracks()[0].stop();
 		}
+		this.logger.log("Emitting leave event");
 		this.props.socket.emit('leave');
 	}
 
 	onRemoteHangup() {
-		this.setState({user: 'host', bridge: 'host-hangup'});
+		const data = {user: 'host', bridge: 'host-hangup'};
+		this.logger.log("Remote hangup, setting data", data);
+		this.setState(data);
 	}
 
 	onMessage(message) {
-		if (message.type === 'offer') {
-			// set remote description and answer
-			this.pc.setRemoteDescription(new RTCSessionDescription(message));
-			this.pc.createAnswer()
-				.then(this.setDescription)
-				.then(this.sendDescription)
-				.catch(this.handleError); // An error occurred, so handle the failure to connect
-
-		} else if (message.type === 'answer') {
-			// set remote description
-			this.pc.setRemoteDescription(new RTCSessionDescription(message));
-		} else if (message.type === 'candidate') {
-			// add ice candidate
-			this.pc.addIceCandidate(
-				new RTCIceCandidate({
-					sdpMLineIndex: message.mlineindex,
-					candidate: message.candidate
-				})
-			);
+		this.logger.log("Receiving message event", message);
+		switch (message.type) {
+			case "offer":
+				// set remote description and answer
+				this.logger.log("Sending remote offer description");
+				this.peerConnection.setRemoteDescription(new RTCSessionDescription(message));
+				this.peerConnection.createAnswer()
+					.then(this.setDescription)
+					.then(this.sendDescription)
+					.catch(this.handleError); // An error occurred, so handle the failure to connect
+				break;
+			case "answer":
+				// set remote description
+				this.logger.log("Setting remote answer description");
+				this.peerConnection.setRemoteDescription(new RTCSessionDescription(message));
+				break;
+			case "candidate":
+				// add ice candidate
+				this.logger.log("Adding ICE Candidate");
+				this.peerConnection.addIceCandidate(
+					new RTCIceCandidate({
+						sdpMLineIndex: message.mlineindex,
+						candidate: message.candidate
+					})
+				);
+				break;
+			default:
+				this.logger.error("Unhandled message type", message.type);
 		}
 	}
 
 	sendData(msg) {
-		this.dc.send(JSON.stringify(msg))
+		this.logger.log("Sending data", msg);
+		this.dataChannel.send(JSON.stringify(msg))
 	}
 
 	// Set up the data channel message handler
 	setupDataHandlers() {
-		this.dc.onmessage = e => {
+		this.logger.log("Setting handlers onmaessage|onclose");
+		this.dataChannel.onmessage = e => {
 			var msg = JSON.parse(e.data);
-			console.log('received message over data channel:' + msg);
+			this.logger.log('received message over data channel:' + msg);
 		};
-		this.dc.onclose = () => {
+		this.dataChannel.onclose = () => {
 			this.remoteStream.getVideoTracks()[0].stop();
-			console.log('The Data Channel is Closed');
+			this.logger.log('The Data Channel is Closed');
 		};
 	}
 
 	setDescription(offer) {
-		this.pc.setLocalDescription(offer);
+		this.logger.log("Setting description", offer);
+		this.peerConnection.setLocalDescription(offer);
 	}
 
 	// send the offer to a server to be forwarded to the other peer
 	sendDescription() {
-		this.props.socket.send(this.pc.localDescription);
+		const description = this.peerConnection.localDescription;
+		this.logger.log("Sending description local description", description);
+		this.props.socket.send(description);
 	}
 
 	hangup() {
-		this.setState({user: 'guest', bridge: 'guest-hangup'});
-		this.pc.close();
+		const data = {user: 'guest', bridge: 'guest-hangup'};
+		this.logger.log("Hanging up and setting state", data);
+		this.setState(data);
+		this.logger.log("Closing peerConnection");
+		this.peerConnection.close();
+		this.logger.log("Emitting leave event");
 		this.props.socket.emit('leave');
 	}
 
 	handleError(e) {
-		console.log(e);
+		this.logger.error(e);
 	}
 
 	init() {
 		// wait for local media to be ready
 		const attachMediaIfReady = () => {
-			this.dc = this.pc.createDataChannel('chat');
+			this.logger.log("Creating channel chat");
+			this.dataChannel = this.peerConnection.createDataChannel('chat');
 			this.setupDataHandlers();
-			console.log('attachMediaIfReady');
-			this.pc.createOffer()
+			this.logger.log('attachMediaIfReady');
+			this.peerConnection.createOffer()
 				.then(this.setDescription)
 				.then(this.sendDescription)
 				.catch(this.handleError); // An error occurred, so handle the failure to connect
@@ -118,11 +143,12 @@ class MediaBridge extends Component {
 		// this is one of Google's public STUN servers
 		// make sure your offer/answer role does not change. If user A does a SLD
 		// with type=offer initially, it must do that during  the whole session
-		this.pc = new RTCPeerConnection({iceServers: [{url: 'stun:stun.l.google.com:19302'}]});
+		this.peerConnection = new RTCPeerConnection({iceServers: [{url: 'stun:stun.l.google.com:19302'}]});
 		// when our browser gets a candidate, send it to the peer
-		this.pc.onicecandidate = e => {
-			console.log(e, 'onicecandidate');
+		this.peerConnection.onicecandidate = e => {
+			this.logger.log(e, 'onicecandidate');
 			if (e.candidate) {
+				this.logger.log("Sending candidate data...");
 				this.props.socket.send({
 					type: 'candidate',
 					mlineindex: e.candidate.sdpMLineIndex,
@@ -131,15 +157,16 @@ class MediaBridge extends Component {
 			}
 		};
 		// when the other side added a media stream, show it on screen
-		this.pc.onaddstream = e => {
-			console.log('onaddstream', e)
+		this.peerConnection.onaddstream = e => {
+			this.logger.log('onaddstream', e);
 			this.remoteStream = e.stream;
 			this.remoteVideo.srcObject = this.remoteStream = e.stream;
+			this.logger.log("Setting state bride established");
 			this.setState({bridge: 'established'});
 		};
-		this.pc.ondatachannel = e => {
+		this.peerConnection.ondatachannel = e => {
 			// data channel
-			this.dc = e.channel;
+			this.dataChannel = e.channel;
 			this.setupDataHandlers();
 			this.sendData({
 				peerMediaStream: {
@@ -149,10 +176,12 @@ class MediaBridge extends Component {
 			//sendData('hello');
 		};
 		// attach local media to the peer connection
-		this.localStream.getTracks().forEach(track => this.pc.addTrack(track, this.localStream));
+		this.logger.log("Setting peerConnection track with localStream");
+		this.localStream.getTracks().forEach(track => this.peerConnection.addTrack(track, this.localStream));
 		// call if we were the last to connect (to increase
 		// chances that everything is set up properly at both ends)
 		if (this.state.user === 'host') {
+			this.logger.log("User is host...attaching media callback");
 			this.props.getUserMedia.then(attachMediaIfReady);
 		}
 	}
@@ -171,5 +200,5 @@ MediaBridge.propTypes = {
 	socket: PropTypes.object.isRequired,
 	getUserMedia: PropTypes.object.isRequired,
 	media: PropTypes.func.isRequired
-}
+};
 export default MediaBridge;

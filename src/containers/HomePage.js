@@ -1,10 +1,14 @@
 import React, {Component} from 'react'
 import {PropTypes} from 'prop-types';
 import Home from '../components/Home';
+import Logger from "../Logger";
+import Login from "./Login";
 
 class HomePage extends Component {
+
 	constructor(props) {
 		super(props);
+		this.logger = new Logger("HomePage");
 		this.defaultRoomId = String(new Date() - new Date().setHours(0, 0, 0, 0));
 		this.state = {roomId: this.defaultRoomId};
 		this.handleChange = this.handleChange.bind(this);
@@ -21,7 +25,7 @@ class HomePage extends Component {
 				roomId={this.state.roomId}
 				handleChange={this.handleChange}
 			/>
-		);
+		)
 	}
 }
 

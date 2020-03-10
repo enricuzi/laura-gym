@@ -4,11 +4,13 @@ import CommunicationContainer from './CommunicationContainer'
 import {connect} from 'react-redux'
 import store from '../store'
 import io from 'socket.io-client'
+import Logger from "../Logger";
 
 class RoomPage extends Component {
 
 	constructor(props) {
 		super(props);
+		this.logger = new Logger("RoomPage");
 		this.getUserMedia = navigator.mediaDevices.getUserMedia({
 			audio: true,
 			video: true
@@ -18,13 +20,16 @@ class RoomPage extends Component {
 
 	componentDidMount() {
 		this.props.addRoom();
+		this.logger.log("Current room id:", this.props.roomId)
 	}
 
 	render() {
+		const {roomId, isAuth} = this.props;
+		// if (!isAuth) window.location.href = "/";
 		return (
 			<div>
 				<MediaContainer media={media => this.media = media} socket={this.socket} getUserMedia={this.getUserMedia}/>
-				<CommunicationContainer socket={this.socket} media={this.media} getUserMedia={this.getUserMedia}/>
+				<CommunicationContainer socket={this.socket} media={this.media} getUserMedia={this.getUserMedia} roomId={roomId}/>
 			</div>
 		);
 	}

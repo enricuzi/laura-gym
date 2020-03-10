@@ -4,10 +4,12 @@ import MediaContainer from './MediaContainer'
 import Communication from '../components/Communication'
 import store from '../store'
 import {connect} from 'react-redux'
+import Logger from "../Logger";
 
 class CommunicationContainer extends React.Component {
 	constructor(props) {
 		super(props);
+		this.logger = new Logger("CommunicationContainer");
 		this.state = {
 			sid: '',
 			message: '',
@@ -22,32 +24,57 @@ class CommunicationContainer extends React.Component {
 		this.send = this.send.bind(this);
 	}
 
+	create() {
+		this.logger.log("Setting bridge to create and user to host");
+		this.props.media.setState({user: 'host', bridge: 'create'})
+	};
+
 	hideAuth() {
+		this.logger.log("Setting bridge to connecting");
 		this.props.media.setState({bridge: 'connecting'});
 	}
 
 	full() {
+		this.logger.log("Setting bridge to full");
 		this.props.media.setState({bridge: 'full'});
+	}
+
+	bridge(role) {
+		this.logger.log("Initializing media with role", role);
+		this.props.media.init();
+	}
+
+	join() {
+		this.logger.log("Joining user guest");
+		this.props.media.setState({user: 'guest', bridge: 'join'})
+	}
+
+	approve({message, sid}) {
+		this.logger.log("Approving bridge...", message, sid);
+		this.props.media.setState({bridge: 'approve'});
+		this.setState({message, sid});
 	}
 
 	componentDidMount() {
 		const socket = this.props.socket;
-		console.log('props', this.props);
-		this.setState({video: this.props.video, audio: this.props.audio});
+		this.logger.log('props', this.props);
+		const {video, audio, roomId} = this.props;
+		const url = "/r/join/" + roomId;
+		this.setState({video, audio, url});
 
-		socket.on('create', () =>
-			this.props.media.setState({user: 'host', bridge: 'create'}));
-		socket.on('full', this.full);
-		socket.on('bridge', role => this.props.media.init());
-		socket.on('join', () =>
-			this.props.media.setState({user: 'guest', bridge: 'join'}));
-		socket.on('approve', ({message, sid}) => {
-			this.props.media.setState({bridge: 'approve'});
-			this.setState({message, sid});
-		});
+		socket.on('create', this.create.bind(this));
+		socket.on('full', this.full.bind(this));
+		socket.on('bridge', this.bridge.bind(this));
+		socket.on('join', this.join.bind(this));
+		socket.on('approve', this.approve.bind(this));
+
+		this.logger.log("Emmitting find event");
 		socket.emit('find');
+
+		this.logger.log("Getting user media...");
 		this.props.getUserMedia
 			.then(stream => {
+				this.logger.log("Setting stream...");
 				this.localStream = stream;
 				this.localStream.getVideoTracks()[0].enabled = this.state.video;
 				this.localStream.getAudioTracks()[0].enabled = this.state.audio;
@@ -55,40 +82,48 @@ class CommunicationContainer extends React.Component {
 	}
 
 	handleInput(e) {
-		this.setState({[e.target.dataset.ref]: e.target.value});
+		const {value, dataset} = e.target;
+		this.logger.log("Handling input value", value);
+		this.setState({[dataset.ref]: value});
 	}
 
 	send(e) {
 		e.preventDefault();
+		this.logger.log("Sending authentication request", this.state);
 		this.props.socket.emit('auth', this.state);
 		this.hideAuth();
 	}
 
 	handleInvitation(e) {
 		e.preventDefault();
-		this.props.socket.emit([e.target.dataset.ref], this.state.sid);
+		const ref = [e.target.dataset.ref];
+		this.logger.log("Handling invitation", ref, this.state.sid);
+		this.props.socket.emit(ref, this.state.sid);
 		this.hideAuth();
 	}
 
 	toggleVideo() {
+		this.logger.log("Toggling video stream");
 		const video = this.localStream.getVideoTracks()[0].enabled = !this.state.video;
 		this.setState({video: video});
 		this.props.setVideo(video);
 	}
 
 	toggleAudio() {
+		this.logger.log("Toggling audio stream");
 		const audio = this.localStream.getAudioTracks()[0].enabled = !this.state.audio;
 		this.setState({audio: audio});
 		this.props.setAudio(audio);
 	}
 
 	handleHangup() {
+		this.logger.log("Hanging up");
 		this.props.media.hangup();
 	}
 
 	render() {
 		return (
-			<Communication
+				<Communication
 				{...this.state}
 				toggleVideo={this.toggleVideo}
 				toggleAudio={this.toggleAudio}
