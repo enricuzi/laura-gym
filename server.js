@@ -34,9 +34,9 @@ app.post('/login', (req, res) => {
 	}
 });
 
-app.get("/", (req, res) => {
-	res.sendFile(__dirname + '/dist/index.html')
-});
+// app.get("/", (req, res) => {
+// 	res.sendFile(__dirname + '/dist/index.html')
+// });
 
 const options = {
 		key: fs.readFileSync(__dirname + '/rtc-video-room-key.pem'),
