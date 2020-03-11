@@ -27,7 +27,6 @@ export default class Login extends Component {
 		}).then(result => {
 			if (result.status === 200) {
 				this.props.onLoginSuccess();
-				this.setState({redirect: "/r"})
 			}
 		})
 	};

@@ -89,7 +89,7 @@ io.sockets.on('connection', socket => {
 		data.sid = socket.id;
 		// sending to all clients in the room (channel) except sender
 		console.log("Authenticating to room", room, data);
-		socket.broadcast.to(room).emit('approve', data);
+		//socket.broadcast.to(room).emit('approve', data);
 	});
 	socket.on('accept', id => {
 		io.sockets.connected[id].join(room);

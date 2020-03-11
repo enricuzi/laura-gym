@@ -58,9 +58,8 @@ class CommunicationContainer extends React.Component {
 	componentDidMount() {
 		const socket = this.props.socket;
 		this.logger.log('props', this.props);
-		const {video, audio, roomId} = this.props;
-		const url = "/r/join/" + roomId;
-		this.setState({video, audio, url});
+		const {video, audio} = this.props;
+		this.setState({video, audio});
 
 		socket.on('create', this.create.bind(this));
 		socket.on('full', this.full.bind(this));
@@ -122,9 +121,12 @@ class CommunicationContainer extends React.Component {
 	}
 
 	render() {
+		const {roomId} = this.props;
+		const url = roomId ? "/r/join/" + roomId : "";
 		return (
-				<Communication
+			<Communication
 				{...this.state}
+				url={url}
 				toggleVideo={this.toggleVideo}
 				toggleAudio={this.toggleAudio}
 				send={this.send}
