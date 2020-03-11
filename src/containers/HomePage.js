@@ -1,6 +1,7 @@
 import React, {Component} from 'react'
 import {PropTypes} from 'prop-types';
 import Home from '../components/Home';
+import Login from "../components/Login";
 
 class HomePage extends Component {
 	constructor(props) {
@@ -16,11 +17,14 @@ class HomePage extends Component {
 
 	render() {
 		return (
-			<Home
-				defaultRoomId={this.defaultRoomId}
-				roomId={this.state.roomId}
-				handleChange={this.handleChange}
-			/>
+			<div className={"component-homepage"}>
+				<Login/>
+				<Home
+					defaultRoomId={this.defaultRoomId}
+					roomId={this.state.roomId}
+					handleChange={this.handleChange}
+				/>
+			</div>
 		);
 	}
 }

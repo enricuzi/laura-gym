@@ -14,14 +14,31 @@ const app = express(),
 	},
 	port = process.env.PORT || 3000,
 	server = process.env.NODE_ENV === 'production' ?
-		http.createServer(app).listen(port) :
-		https.createServer(options, app).listen(port),
+		http.createServer(app).listen(port, () => console.log("Server started on port", port)) :
+		https.createServer(options, app).listen(port, () => console.log("Server started on port", port)),
 	io = sio(server);
 
 // compress all requests
 app.use(compression());
 
 app.use(express.static(path.join(__dirname, 'dist')));
+
+// Parse URL-encoded bodies (as sent by HTML forms)
+app.use(express.urlencoded());
+
+// Parse JSON bodies (as sent by API clients)
+app.use(express.json());
+
+// Access the parse results as request.body
+app.post('/login', (req, res) => {
+	const {username, password} = req.body;
+	console.log("Authenticating...", username, password);
+	if (username === "laura" && password === "loradilaura") {
+		res.send(200);
+	} else {
+		res.send(401);
+	}
+});
 
 app.use((req, res) => res.sendFile(__dirname + '/dist/index.html'));
 
