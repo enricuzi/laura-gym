@@ -13,7 +13,8 @@ const app = express();
 // compress all requests
 app.use(compression());
 
-app.use(express.static(path.join(__dirname, 'dist')));
+app.use(express.static('dist'));
+app.use(express.static('public'));
 
 // app.use((req, res) => res.sendFile(__dirname + '/dist/index.html'));
 
