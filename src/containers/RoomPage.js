@@ -7,6 +7,10 @@ import io from 'socket.io-client'
 
 class RoomPage extends Component {
 
+	state = {
+		bridge: ""
+	};
+
 	constructor(props) {
 		super(props);
 		this.getUserMedia = navigator.mediaDevices.getUserMedia({
@@ -14,17 +18,23 @@ class RoomPage extends Component {
 			video: true
 		}).catch(e => alert('getUserMedia() error: ' + e.name));
 		this.socket = io.connect();
+		this.onBridgeChanged = this.onBridgeChanged.bind(this);
 	}
 
 	componentDidMount() {
 		this.props.addRoom();
 	}
 
+	onBridgeChanged(data) {
+		this.setState({bridge: data.bridge});
+		this.media.setState(data);
+	}
+
 	render() {
 		return (
-			<div>
-				<MediaContainer media={media => this.media = media} socket={this.socket} getUserMedia={this.getUserMedia}/>
-				<CommunicationContainer socket={this.socket} media={this.media} getUserMedia={this.getUserMedia}/>
+			<div className={this.state.bridge}>
+				<MediaContainer media={media => this.media = media} socket={this.socket} getUserMedia={this.getUserMedia} onBridgeChanged={this.onBridgeChanged}/>
+				<CommunicationContainer socket={this.socket} media={this.media} getUserMedia={this.getUserMedia} onBridgeChanged={this.onBridgeChanged}/>
 			</div>
 		);
 	}

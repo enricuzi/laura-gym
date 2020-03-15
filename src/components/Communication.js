@@ -4,7 +4,7 @@ import {Link} from 'react-router-dom';
 import ToggleFullScreen from './ToggleFullScreen';
 
 const Communication = props =>
-	<div className="auth">
+	<div className="messages">
 		<div className="media-controls">
 			<Link className="call-exit-button" to="/">
 				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36" className="svg">
@@ -53,8 +53,12 @@ const Communication = props =>
 			<Link className="primary-button" to="/">OK</Link>
 		</div>
 		<div className="waiting">
-			<p><span>Waiting for someone to join this room:&nbsp;</span><a href={window.location.href}>{window.location.href}</a><br/>
-				<span className="remote-left">The remote side hung up.</span></p>
+			<p>
+				<span>Waiting for someone to join this room:&nbsp;</span>
+				<a href={window.location.href}>{window.location.href}</a>
+				<br/>
+				<span className="remote-left">The remote side hung up.</span>
+			</p>
 		</div>
 	</div>;
 

@@ -4,10 +4,12 @@ import MediaContainer from './MediaContainer'
 import Communication from '../components/Communication'
 import store from '../store'
 import {connect} from 'react-redux'
+import Logger from "../Logger";
 
 class CommunicationContainer extends React.Component {
 	constructor(props) {
 		super(props);
+		this.logger = new Logger("CommunicationContainer");
 		this.state = {
 			sid: '',
 			message: '',
@@ -20,38 +22,58 @@ class CommunicationContainer extends React.Component {
 		this.toggleVideo = this.toggleVideo.bind(this);
 		this.toggleAudio = this.toggleAudio.bind(this);
 		this.send = this.send.bind(this);
+		this.onBridgeChanged = this.onBridgeChanged.bind(this);
 	}
 
 	hideAuth() {
-		this.props.media.setState({bridge: 'connecting'});
+		this.logger.log("Setting bridge to 'connecting'");
+		this.onBridgeChanged({bridge: 'connecting'});
 	}
 
 	full() {
-		this.props.media.setState({bridge: 'full'});
+		const data = {bridge: 'full'};
+		this.logger.log("Socket event 'full'", data);
+		this.onBridgeChanged(data);
+	}
+
+	onBridgeChanged(data) {
+		this.props.onBridgeChanged(data);
 	}
 
 	componentDidMount() {
 		const socket = this.props.socket;
-		console.log('props', this.props);
+		this.logger.log('Component did mount, props', this.props);
 		this.setState({video: this.props.video, audio: this.props.audio});
 
-		socket.on('create', () =>
-			this.props.media.setState({user: 'host', bridge: 'create'}));
+		socket.on('create', () => {
+			const data = {user: 'host', bridge: 'create'};
+			this.logger.log("Socket event 'create'", data);
+			return this.onBridgeChanged(data)
+		});
 		socket.on('full', this.full);
-		socket.on('bridge', role => this.props.media.init());
-		socket.on('join', () =>
-			this.props.media.setState({user: 'guest', bridge: 'join'}));
+		socket.on('bridge', role => {
+			this.logger.log("Socket event 'bridge'", role);
+			return this.props.media.init()
+		});
+		socket.on('join', () => {
+			const data = {user: 'guest', bridge: 'join'};
+			this.logger.log("Socket event 'join'", data);
+			return this.onBridgeChanged(data)
+		});
 		socket.on('approve', ({message, sid}) => {
-			this.props.media.setState({bridge: 'approve'});
+			this.logger.log("Socket event 'approve'");
+			this.onBridgeChanged({bridge: 'approve'});
 			this.setState({message, sid});
 		});
+		this.logger.log("Emitting event 'find'...");
 		socket.emit('find');
-		this.props.getUserMedia
-			.then(stream => {
-				this.localStream = stream;
-				this.localStream.getVideoTracks()[0].enabled = this.state.video;
-				this.localStream.getAudioTracks()[0].enabled = this.state.audio;
-			});
+		this.logger.log("Getting user media...");
+		this.props.getUserMedia.then(stream => {
+			this.logger.log("Setting localStream");
+			this.localStream = stream;
+			this.localStream.getVideoTracks()[0].enabled = this.state.video;
+			this.localStream.getAudioTracks()[0].enabled = this.state.audio;
+		});
 	}
 
 	handleInput(e) {
@@ -60,29 +82,34 @@ class CommunicationContainer extends React.Component {
 
 	send(e) {
 		e.preventDefault();
-		this.props.socket.emit('auth', this.state);
+		this.logger.log("Send: emitting event 'messages'", this.state);
+		this.props.socket.emit('messages', this.state);
 		this.hideAuth();
 	}
 
 	handleInvitation(e) {
 		e.preventDefault();
+		this.logger.log("Handle invitation: emitting event", [e.target.dataset.ref], this.state.sid);
 		this.props.socket.emit([e.target.dataset.ref], this.state.sid);
 		this.hideAuth();
 	}
 
 	toggleVideo() {
+		this.logger.log("Toggling video...");
 		const video = this.localStream.getVideoTracks()[0].enabled = !this.state.video;
 		this.setState({video: video});
 		this.props.setVideo(video);
 	}
 
 	toggleAudio() {
+		this.logger.log("Toggling audio...");
 		const audio = this.localStream.getAudioTracks()[0].enabled = !this.state.audio;
 		this.setState({audio: audio});
 		this.props.setAudio(audio);
 	}
 
 	handleHangup() {
+		this.logger.log("Hanging up...");
 		this.props.media.hangup();
 	}
 

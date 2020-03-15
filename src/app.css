@@ -119,12 +119,12 @@ input[type=text] {
 	height: 100%;
 }
 
-.guest-hangup + .auth .you-left {
+.guest-hangup .messages .you-left {
 	display: inline;
 }
 
 .full .room-occupied,
-.host-hangup + .auth .remote-left,
+.host-hangup .messages .remote-left,
 .recent-room {
 	display: block;
 }
@@ -164,7 +164,12 @@ input[type=text] {
 	width: 100%;
 }
 
-.auth {
+.remote-video,
+.local-video {
+	transform: rotateY(180deg);
+}
+
+.messages {
 	position: absolute;
 	bottom: 0;
 	left: 0;
@@ -221,21 +226,21 @@ input[type=text] {
 	transition: max-height .3s ease;
 }
 
-.full + .auth .room-occupied,
-.guest-hangup + .auth .request-access,
-.join + .auth .request-access,
-.approve + .auth .grant-access {
+.full .messages .room-occupied,
+.guest-hangup .messages .request-access,
+.join .messages .request-access,
+.approve .messages .grant-access {
 	transition-delay: .3s;
 	/* Set the max-height to something large. In this case there's an obvious limit. */
 	max-height: 20ex;
 }
 
-.host-hangup + .auth .waiting,
-.create + .auth .waiting {
+.host-hangup .messages .waiting,
+.create .messages .waiting {
 	/* Set the max-height to something large. In this case there's an obvious limit. */
 	max-height: 20ex;
 }
 
-.established + .auth .hangup-button {
+.established .messages .hangup-button {
 	display: flex;
 }

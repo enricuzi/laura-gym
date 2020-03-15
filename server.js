@@ -59,6 +59,8 @@ io.sockets.on('connection', socket => {
 	socket.on('find', () => {
 		const url = socket.request.headers.referer.split('/');
 		room = url[url.length - 1];
+
+		console.log("Handling event 'find' for room", room);
 		const sr = io.sockets.adapter.rooms[room];
 
 		if (sr === undefined) {
@@ -74,7 +76,7 @@ io.sockets.on('connection', socket => {
 			socket.emit('full', room);
 		}
 	});
-	socket.on('auth', data => {
+	socket.on('messages', data => {
 		data.sid = socket.id;
 		// sending to all clients in the room (channel) except sender
 		console.log("Authenticating to room", room, data);

@@ -49,6 +49,7 @@ class MediaBridge extends Component {
 	onRemoteHangup() {
 		const data = {user: 'host', bridge: 'host-hangup'};
 		this.logger.log("Remote hang up", data);
+		this.props.onBridgeChanged(data);
 		this.setState(data);
 	}
 
@@ -116,6 +117,7 @@ class MediaBridge extends Component {
 		this.peerConnection.close();
 		this.logger.log("Emitting 'leave' event");
 		this.props.socket.emit('leave');
+		this.props.onBridgeChanged(data);
 	}
 
 	handleError(e) {
@@ -159,7 +161,9 @@ class MediaBridge extends Component {
 			this.logger.log('onaddstream, setting remote stream...', e);
 			this.remoteStream = e.stream;
 			this.remoteVideo.srcObject = this.remoteStream = e.stream;
-			this.setState({bridge: 'established'});
+			const data = {bridge: 'established'};
+			this.setState(data);
+			this.props.onBridgeChanged(data);
 		};
 		this.peerConnection.ondatachannel = e => {
 			// data channel
@@ -188,7 +192,7 @@ class MediaBridge extends Component {
 
 	render() {
 		return (
-			<div className={`media-bridge ${this.state.bridge}`}>
+			<div className={`media-bridge`}>
 				<video className="remote-video" ref={(ref) => this.remoteVideo = ref} autoPlay></video>
 				<video className="local-video" ref={(ref) => this.localVideo = ref} autoPlay muted></video>
 			</div>
